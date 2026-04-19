@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>DCA Dividend Calc</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f7f5;
+  --white: #ffffff;
+  --border: #e5e5e0;
+  --border2: #d0d0c8;
+  --text: #1a1a18;
+  --muted: #6b6b65;
+  --muted2: #9a9a92;
+  --green: #00875a;
+  --green-bg: #e6f4ef;
+  --green-border: #b3d9cc;
+  --blue: #0057b8;
+  --blue-bg: #e8f0fb;
+  --gold: #8a6500;
+  --gold-bg: #fdf3d7;
+  --red: #c0392b;
+  --red-bg: #fdecea;
+  --accent: #1a1a18;
+  --mono: 'IBM Plex Mono', monospace;
+  --thai: 'Noto Sans Thai', sans-serif;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--thai);
+  font-size: 15px;
+  min-height: 100vh;
+  padding-bottom: 100px;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(247,247,245,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 16px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.topbar-left { display:flex; align-items:center; gap:10px; }
+.logo { width:28px; height:28px; background:var(--accent); border-radius:7px; display:flex; align-items:center; justify-content:center; }
+.logo svg { width:16px; height:16px; fill:white; }
+.topbar-title { font-family:var(--mono); font-size:13px; color:var(--text); font-weight:600; letter-spacing:0.5px; }
+.fx-badge {
+  display:flex; align-items:center; gap:6px;
+  background:var(--white); border:1px solid var(--border2);
+  border-radius:20px; padding:5px 10px;
+  box-shadow: var(--shadow);
+}
+.fx-badge .fx-label { font-family:var(--mono); font-size:11px; color:var(--muted); }
+.fx-badge .fx-val { font-family:var(--mono); font-size:12px; color:var(--text); font-weight:600; }
+.fx-refresh { background:none; border:none; cursor:pointer; font-size:13px; padding:0; opacity:0.6; }
+.fx-refresh:active { opacity:1; }
+
+/* ── TABS ── */
+.tabs {
+  display:flex; background:var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 0 4px;
+}
+.tab {
+  flex:1; padding:12px 6px; text-align:center;
+  font-size:13px; font-weight:500; color:var(--muted);
+  cursor:pointer; border-bottom:2px solid transparent;
+  transition:all 0.2s;
+}
+.tab.active { color:var(--text); border-bottom-color:var(--text); font-weight:600; }
+
+/* ── SECTIONS ── */
+.section { display:none; padding:16px; }
+.section.active { display:block; }
+
+/* ── CARD ── */
+.card {
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--radius); padding:16px; margin-bottom:12px;
+  box-shadow: var(--shadow);
+}
+.card-title {
+  font-family:var(--mono); font-size:10px; color:var(--muted);
+  letter-spacing:2px; text-transform:uppercase; font-weight:500;
+  margin-bottom:14px; display:flex; align-items:center; gap:8px;
+}
+.card-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* ── INPUTS ── */
+.field { margin-bottom:14px; }
+.field:last-child { margin-bottom:0; }
+.field > label { display:block; font-size:13px; color:var(--muted); margin-bottom:7px; font-weight:500; }
+.input-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.iw { position:relative; display:flex; align-items:center; }
+.iw .pfx { position:absolute; left:11px; font-family:var(--mono); font-size:13px; color:var(--muted); pointer-events:none; z-index:1; }
+.iw input {
+  width:100%; background:var(--bg); border:1px solid var(--border2);
+  border-radius:9px; padding:11px 10px 11px 26px;
+  color:var(--text); font-family:var(--mono); font-size:15px; font-weight:600;
+  outline:none; -moz-appearance:textfield; -webkit-appearance:none;
+  transition:border-color 0.2s, box-shadow 0.2s;
+}
+.iw input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(26,26,24,0.08); }
+.iw input::-webkit-outer-spin-button, .iw input::-webkit-inner-spin-button { -webkit-appearance:none; }
+.conv-hint { font-size:11px; color:var(--muted2); font-family:var(--mono); margin-top:4px; min-height:16px; }
+.per-hint { font-size:11px; color:var(--green); font-weight:600; margin-top:6px; min-height:16px; }
+
+/* ── SLIDER ── */
+.slider-row { display:flex; align-items:center; gap:12px; }
+.slider-row label { font-size:13px; color:var(--muted); font-weight:500; white-space:nowrap; }
+.slider-val { font-family:var(--mono); font-size:18px; font-weight:700; color:var(--text); white-space:nowrap; min-width:50px; text-align:right; }
+input[type=range] { -webkit-appearance:none; flex:1; height:4px; background:var(--border2); border-radius:2px; outline:none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--text); cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,0.2); }
+
+/* ── DIVIDER ── */
+.divider { height:1px; background:var(--border); margin:14px 0; }
+
+/* ── SECTION LABEL ── */
+.slabel { font-family:var(--mono); font-size:10px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; font-weight:500; margin-bottom:10px; }
+
+/* ── PORTFOLIO SUMMARY BAR ── */
+.port-summary {
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--radius); padding:14px 16px; margin-bottom:12px;
+  box-shadow:var(--shadow); display:flex; gap:0; overflow:hidden;
+}
+.ps-item { flex:1; text-align:center; border-right:1px solid var(--border); padding:0 8px; }
+.ps-item:last-child { border-right:none; }
+.ps-label { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; font-weight:500; margin-bottom:4px; }
+.ps-val { font-family:var(--mono); font-size:15px; font-weight:700; color:var(--text); }
+.ps-val.green { color:var(--green); }
+
+/* ── STOCK ITEM ── */
+.stock-item {
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--radius); padding:13px 14px; margin-bottom:8px;
+  box-shadow:var(--shadow); display:flex; align-items:center; gap:10px;
+}
+.si-bar { width:3px; height:36px; border-radius:2px; background:var(--border2); flex-shrink:0; }
+.si-main { flex:1; min-width:0; }
+.si-top { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.si-ticker { font-family:var(--mono); font-size:16px; font-weight:700; color:var(--text); }
+.si-yield-badge {
+  font-family:var(--mono); font-size:11px; font-weight:600;
+  padding:2px 7px; border-radius:6px;
+  background:var(--green-bg); color:var(--green); border:1px solid var(--green-border);
+}
+.si-yield-badge.loading { background:var(--gold-bg); color:var(--gold); border-color:#f0d080; }
+.si-yield-badge.error { background:var(--red-bg); color:var(--red); border-color:#f0b0a8; }
+.si-name { font-size:11px; color:var(--muted); margin-top:2px; }
+.si-meta { display:flex; align-items:center; gap:6px; margin-top:4px; flex-wrap:wrap; }
+.freq-badge { font-size:10px; padding:2px 7px; border-radius:6px; font-family:var(--mono); font-weight:500; }
+.freq-m { background:var(--blue-bg); color:var(--blue); }
+.freq-q { background:var(--gold-bg); color:var(--gold); }
+.weight-badge { font-size:10px; padding:2px 7px; border-radius:6px; font-family:var(--mono); font-weight:500; background:var(--bg); color:var(--muted); border:1px solid var(--border); }
+.si-actions { display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
+.del-btn { background:var(--red-bg); border:1px solid #f0c0b8; border-radius:7px; padding:6px 9px; font-size:12px; color:var(--red); cursor:pointer; font-family:var(--mono); font-weight:600; }
+.refresh-yield-btn { background:var(--bg); border:1px solid var(--border2); border-radius:7px; padding:6px 9px; font-size:12px; color:var(--muted); cursor:pointer; font-family:var(--mono); }
+
+/* ── ADD / CALC BUTTONS ── */
+.add-btn {
+  width:100%; padding:13px; background:var(--white);
+  border:1px dashed var(--border2); border-radius:var(--radius);
+  color:var(--muted); font-family:var(--mono); font-size:13px; font-weight:500;
+  cursor:pointer; transition:all 0.2s; margin-top:4px;
+}
+.add-btn:active { background:var(--bg); }
+.calc-btn {
+  width:100%; padding:16px; background:var(--text); border:none;
+  border-radius:var(--radius); font-family:var(--mono); font-size:14px;
+  font-weight:700; letter-spacing:1.5px; color:#fff; cursor:pointer;
+  box-shadow:var(--shadow-md); margin-top:12px;
+  transition:opacity 0.15s, transform 0.1s;
+}
+.calc-btn:active { opacity:0.85; transform:scale(0.98); }
+
+/* ── RESULTS ── */
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+#rs { animation:fadeUp 0.35s ease; }
+
+.result-hero {
+  background:var(--text); color:white;
+  border-radius:var(--radius); padding:22px; text-align:center;
+  margin-bottom:12px; box-shadow:var(--shadow-md);
+}
+.rh-label { font-family:var(--mono); font-size:9px; color:rgba(255,255,255,0.5); letter-spacing:3px; text-transform:uppercase; margin-bottom:8px; font-weight:500; }
+.rh-val { font-family:var(--mono); font-size:38px; font-weight:700; color:#fff; line-height:1; margin-bottom:4px; }
+.rh-thb { font-size:16px; color:rgba(255,255,255,0.65); font-family:var(--mono); font-weight:500; margin-bottom:10px; }
+.rh-sub { font-size:12px; color:rgba(255,255,255,0.5); }
+.rh-chip { display:inline-block; margin-top:10px; padding:4px 14px; background:rgba(255,255,255,0.15); border-radius:20px; font-family:var(--mono); font-size:13px; color:#fff; font-weight:600; }
+
+.stat4 { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+.stat-box { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:13px; box-shadow:var(--shadow); }
+.sb-label { font-size:9px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:5px; font-weight:500; }
+.sb-val { font-family:var(--mono); font-size:17px; color:var(--text); font-weight:700; }
+.sb-val.g { color:var(--green); }
+.sb-val.b { color:var(--blue); }
+.sb-val.gold { color:var(--gold); }
+.sb-note { font-size:11px; color:var(--muted2); margin-top:3px; font-family:var(--mono); }
+
+/* ── TABLE ── */
+.tbl-wrap { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:12px; box-shadow:var(--shadow); }
+.tbl-head { padding:12px 14px; border-bottom:1px solid var(--border); }
+.tbl-title { font-family:var(--mono); font-size:10px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; font-weight:500; }
+.tbl-scroll { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-family:var(--mono); }
+thead th { padding:9px 12px; text-align:right; color:var(--muted); font-size:9px; letter-spacing:1px; text-transform:uppercase; border-bottom:1px solid var(--border); white-space:nowrap; font-weight:500; }
+thead th:first-child { text-align:center; }
+tbody tr { border-bottom:1px solid var(--border); }
+tbody tr:last-child { border-bottom:none; }
+tbody tr:nth-child(even) { background:var(--bg); }
+td { padding:10px 12px; text-align:right; white-space:nowrap; font-size:12px; font-weight:600; color:var(--text); }
+td:first-child { text-align:center; color:var(--muted); font-weight:500; }
+td.g { color:var(--green); }
+td.gold { color:var(--gold); }
+td .sub { font-size:10px; color:var(--muted2); font-weight:400; display:block; }
+
+/* ── BREAKDOWN ── */
+.breakdown-item { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:8px; box-shadow:var(--shadow); }
+.bd-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+.bd-left .bd-ticker { font-family:var(--mono); font-size:16px; font-weight:700; color:var(--text); }
+.bd-left .bd-name { font-size:11px; color:var(--muted); margin-top:2px; }
+.bd-yield { font-family:var(--mono); font-size:12px; color:var(--green); background:var(--green-bg); padding:4px 10px; border-radius:7px; font-weight:600; border:1px solid var(--green-border); }
+.bd-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+.bd-stat { text-align:center; background:var(--bg); border-radius:8px; padding:9px 4px; border:1px solid var(--border); }
+.bds-l { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; font-weight:500; }
+.bds-v { font-family:var(--mono); font-size:12px; color:var(--text); margin-top:3px; font-weight:700; }
+.bds-v.g { color:var(--green); }
+.bds-sub { font-size:9px; color:var(--muted2); font-family:var(--mono); }
+
+/* ── MODAL ── */
+.modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:200; align-items:flex-end; justify-content:center; }
+.modal-bg.open { display:flex; }
+.modal { background:var(--white); border-top:1px solid var(--border); border-radius:20px 20px 0 0; padding:24px 20px; width:100%; max-width:480px; max-height:80vh; overflow-y:auto; animation:slideUp 0.3s ease; box-shadow:0 -4px 24px rgba(0,0,0,0.1); }
+@keyframes slideUp { from{transform:translateY(40px)} to{transform:translateY(0)} }
+.modal-handle { width:36px; height:4px; background:var(--border2); border-radius:2px; margin:0 auto 20px; }
+.modal h3 { font-family:var(--mono); font-size:14px; color:var(--text); margin-bottom:16px; font-weight:700; }
+.mfield { margin-bottom:13px; }
+.mfield label { display:block; font-size:13px; color:var(--muted); margin-bottom:6px; font-weight:500; }
+.mfield input[type=text], .mfield input[type=number], .mfield select {
+  width:100%; background:var(--bg); border:1px solid var(--border2);
+  border-radius:9px; padding:12px; color:var(--text);
+  font-family:var(--mono); font-size:15px; font-weight:600; outline:none;
+  -moz-appearance:textfield; -webkit-appearance:none;
+  transition:border-color 0.2s;
+}
+.mfield input:focus, .mfield select:focus { border-color:var(--text); }
+.mfield select { -webkit-appearance:none; }
+.modal-btns { display:flex; gap:8px; margin-top:12px; }
+.btn-ok { flex:1; background:var(--text); color:#fff; border:none; border-radius:9px; padding:14px; font-family:var(--mono); font-size:13px; font-weight:700; cursor:pointer; }
+.btn-cancel { flex:1; background:var(--bg); color:var(--muted); border:1px solid var(--border2); border-radius:9px; padding:14px; font-family:var(--mono); font-size:13px; font-weight:500; cursor:pointer; }
+
+/* ── STATUS / TOAST ── */
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--text); color:#fff; padding:10px 18px; border-radius:20px; font-family:var(--mono); font-size:12px; font-weight:500; z-index:300; opacity:0; transition:opacity 0.3s; pointer-events:none; white-space:nowrap; }
+.toast.show { opacity:1; }
+.no-result { text-align:center; padding:60px 20px; color:var(--muted2); font-size:14px; line-height:1.8; }
+.loading-dot { display:inline-block; animation:blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></div>
+    <div class="topbar-title">DCA DIVIDEND</div>
+  </div>
+  <div class="fx-badge">
+    <span class="fx-label">฿/$</span>
+    <span class="fx-val" id="fx-display">34.00</span>
+    <button class="fx-refresh" onclick="fetchFX()" title="รีเฟรชอัตราแลกเปลี่ยน">↻</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('setup')">ตั้งค่า</div>
+  <div class="tab" onclick="switchTab('results')">ผลลัพธ์</div>
+  <div class="tab" onclick="switchTab('breakdown')">แยกหุ้น</div>
+</div>
+
+<!-- ══ SETUP ══ -->
+<div class="section active" id="tab-setup">
+
+  <div class="card">
+    <div class="card-title">เงินลงทุน</div>
+    <div class="field">
+      <label>เงินต้นรวมทั้งพอร์ต</label>
+      <div class="input-row">
+        <div>
+          <div class="iw"><span class="pfx">$</span><input type="number" id="p-usd" placeholder="0" min="0" step="100" oninput="syncFromUSD('p-usd','p-thb','h-pu','h-pt'); updateHints()"></div>
+          <div class="conv-hint" id="h-pu"></div>
+        </div>
+        <div>
+          <div class="iw"><span class="pfx">฿</span><input type="number" id="p-thb" placeholder="0" min="0" step="1000" oninput="syncFromTHB('p-thb','p-usd','h-pt','h-pu'); updateHints()"></div>
+          <div class="conv-hint" id="h-pt"></div>
+        </div>
+      </div>
+      <div class="per-hint" id="hint-p">หารเฉลี่ยทุกหุ้นเท่าๆ กัน</div>
+    </div>
+
+    <div class="field">
+      <label>DCA ต่อเดือนรวม</label>
+      <div class="input-row">
+        <div>
+          <div class="iw"><span class="pfx">$</span><input type="number" id="d-usd" placeholder="0" min="0" step="10" oninput="syncFromUSD('d-usd','d-thb','h-du','h-dt'); updateHints()"></div>
+          <div class="conv-hint" id="h-du"></div>
+        </div>
+        <div>
+          <div class="iw"><span class="pfx">฿</span><input type="number" id="d-thb" placeholder="0" min="0" step="100" oninput="syncFromTHB('d-thb','d-usd','h-dt','h-du'); updateHints()"></div>
+          <div class="conv-hint" id="h-dt"></div>
+        </div>
+      </div>
+      <div class="per-hint" id="hint-d">หารเฉลี่ยทุกหุ้นเท่าๆ กัน</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ระยะเวลา</div>
+    <div class="slider-row">
+      <label>ลงทุนนาน</label>
+      <input type="range" id="years" min="1" max="40" value="10" oninput="document.getElementById('yval').textContent=this.value">
+      <div class="slider-val"><span id="yval">10</span> ปี</div>
+    </div>
+  </div>
+
+  <!-- Portfolio Summary -->
+  <div class="port-summary" id="port-summary">
+    <div class="ps-item">
+      <div class="ps-label">จำนวนหุ้น</div>
+      <div class="ps-val" id="ps-count">6</div>
+    </div>
+    <div class="ps-item">
+      <div class="ps-label">Yield เฉลี่ย</div>
+      <div class="ps-val green" id="ps-yield">—</div>
+    </div>
+    <div class="ps-item">
+      <div class="ps-label">จ่ายรายเดือน</div>
+      <div class="ps-val" id="ps-monthly">—</div>
+    </div>
+  </div>
+
+  <div class="slabel">หุ้นในพอร์ต</div>
+  <div id="stock-list"></div>
+  <button class="add-btn" onclick="openModal()">+ เพิ่มหุ้น</button>
+  <button class="calc-btn" onclick="calculate()">CALCULATE →</button>
+</div>
+
+<!-- ══ RESULTS ══ -->
+<div class="section" id="tab-results">
+  <div id="rs" style="display:none">
+    <div class="result-hero">
+      <div class="rh-label">มูลค่าพอร์ตสุดท้าย</div>
+      <div class="rh-val" id="r-final">$0</div>
+      <div class="rh-thb" id="r-final-thb">฿0</div>
+      <div class="rh-sub">หลัง <span id="r-years">0</span> ปี · DRIP เปิด</div>
+      <div class="rh-chip" id="r-growth">+0%</div>
+    </div>
+    <div class="stat4">
+      <div class="stat-box"><div class="sb-label">ลงทุนรวม</div><div class="sb-val b" id="r-inv">$0</div><div class="sb-note" id="r-inv-t">฿0</div></div>
+      <div class="stat-box"><div class="sb-label">ปันผลสะสม</div><div class="sb-val g" id="r-dtot">$0</div><div class="sb-note" id="r-dtot-t">฿0</div></div>
+      <div class="stat-box"><div class="sb-label">ปันผล/ปี (ปีสุดท้าย)</div><div class="sb-val gold" id="r-dy">$0</div><div class="sb-note" id="r-dy-t">฿0</div></div>
+      <div class="stat-box"><div class="sb-label">ปันผล/เดือน</div><div class="sb-val gold" id="r-dm">$0</div><div class="sb-note" id="r-dm-t">฿0</div></div>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-head"><div class="tbl-title">ตารางรายปี</div></div>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>ปี</th><th>มูลค่า</th><th>ปันผล/ปี</th><th>ปันผล/เดือน</th><th>ลงทุนสะสม</th></tr></thead>
+          <tbody id="ytable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div id="no-r" class="no-result">กด CALCULATE<br>ในแท็บตั้งค่าก่อนครับ</div>
+</div>
+
+<!-- ══ BREAKDOWN ══ -->
+<div class="section" id="tab-breakdown">
+  <div id="bdlist"><div class="no-result">กด CALCULATE<br>ในแท็บตั้งค่าก่อนครับ</div></div>
+</div>
+
+<!-- ══ MODAL ══ -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>เพิ่มหุ้นใหม่</h3>
+    <div class="mfield"><label>Ticker</label><input type="text" id="m-ticker" placeholder="เช่น JEPI, VYM"></div>
+    <div class="mfield"><label>ชื่อย่อ (optional)</label><input type="text" id="m-name" placeholder="ชื่อกองทุน"></div>
+    <div class="mfield">
+      <label>Dividend Yield (%) <span id="m-fetch-status"></span></label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" id="m-yield" placeholder="0.0" step="0.1" min="0" style="flex:1">
+        <button onclick="fetchYieldForModal()" style="padding:12px 14px;background:var(--bg);border:1px solid var(--border2);border-radius:9px;font-family:var(--mono);font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap">ดึงอัตโนมัติ</button>
+      </div>
+    </div>
+    <div class="mfield"><label>ความถี่จ่ายปันผล</label>
+      <select id="m-freq">
+        <option value="12">รายเดือน (12x/ปี)</option>
+        <option value="4">รายไตรมาส (4x/ปี)</option>
+        <option value="2">ราย 6 เดือน (2x/ปี)</option>
+        <option value="1">รายปี (1x/ปี)</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-ok" onclick="addStock()">เพิ่มหุ้น</button>
+      <button class="btn-cancel" onclick="closeModal()">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+let fxRate = 34;
+let stocks = [
+  {id:1, ticker:'BITO', name:'ProShares Bitcoin ETF',  yield:15,   freq:12},
+  {id:2, ticker:'IGLD', name:'iShares Gold ETF',        yield:10,   freq:12},
+  {id:3, ticker:'JEPQ', name:'JPMorgan Nasdaq Premium', yield:10.5, freq:12},
+  {id:4, ticker:'MO',   name:'Altria Group',            yield:6.5,  freq:4},
+  {id:5, ticker:'O',    name:'Realty Income',           yield:5.7,  freq:12},
+  {id:6, ticker:'SCHD', name:'Schwab US Dividend ETF',  yield:3.4,  freq:4},
+];
+let nid = 7;
+
+// ── FORMAT ──
+const fU = n => '$' + n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const fT = n => '฿' + (n * fxRate).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const fN = n => n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const fX = () => fxRate;
+
+// ── TOAST ──
+function toast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+// ── FX RATE ──
+async function fetchFX() {
+  document.getElementById('fx-display').innerHTML = '<span class="loading-dot">...</span>';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 200,
+        messages: [{
+          role: 'user',
+          content: 'What is the current USD to THB exchange rate? Reply with ONLY a JSON object like {"rate": 34.52} — no other text.'
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.find(b => b.type==='text')?.text || '';
+    const match = text.match(/\{[^}]+\}/);
+    if (match) {
+      const parsed = JSON.parse(match[0]);
+      if (parsed.rate && parsed.rate > 20 && parsed.rate < 60) {
+        fxRate = parsed.rate;
+        document.getElementById('fx-display').textContent = fxRate.toFixed(2);
+        toast('อัปเดตอัตราแลกเปลี่ยนแล้ว ✓');
+        updateHints();
+        return;
+      }
+    }
+    throw new Error('parse failed');
+  } catch(e) {
+    document.getElementById('fx-display').textContent = fxRate.toFixed(2);
+    toast('ใช้อัตราเดิม ' + fxRate.toFixed(2));
+  }
+}
+
+// ── YIELD FETCH ──
+async function fetchYield(ticker) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 200,
+      messages: [{
+        role: 'user',
+        content: `What is the current annual dividend yield percentage for ${ticker} stock/ETF? Reply with ONLY a JSON object like {"yield": 5.7, "freq": 12} where freq is payments per year (12=monthly, 4=quarterly, 2=semi-annual, 1=annual). No other text.`
+      }]
+    })
+  });
+  const data = await res.json();
+  const text = data.content?.find(b => b.type==='text')?.text || '';
+  const match = text.match(/\{[^}]+\}/);
+  if (match) {
+    const parsed = JSON.parse(match[0]);
+    if (parsed.yield > 0) return parsed;
+  }
+  throw new Error('no yield');
+}
+
+async function fetchYieldForModal() {
+  const ticker = document.getElementById('m-ticker').value.trim().toUpperCase();
+  if (!ticker) { toast('กรอก Ticker ก่อน'); return; }
+  const statusEl = document.getElementById('m-fetch-status');
+  statusEl.innerHTML = '<span class="loading-dot" style="font-size:11px;color:var(--muted)">กำลังดึง...</span>';
+  try {
+    const result = await fetchYield(ticker);
+    document.getElementById('m-yield').value = result.yield.toFixed(1);
+    if (result.freq) document.getElementById('m-freq').value = result.freq;
+    statusEl.textContent = '✓';
+    statusEl.style.color = 'var(--green)';
+    toast(`${ticker} yield: ${result.yield.toFixed(1)}% ✓`);
+  } catch(e) {
+    statusEl.textContent = '— กรอกเองได้เลย';
+    statusEl.style.color = 'var(--muted2)';
+  }
+}
+
+async function refreshStockYield(id) {
+  const s = stocks.find(x => x.id === id);
+  if (!s) return;
+  const badge = document.getElementById('badge-' + id);
+  if (badge) { badge.textContent = '...'; badge.className = 'si-yield-badge loading'; }
+  try {
+    const result = await fetchYield(s.ticker);
+    s.yield = result.yield;
+    if (result.freq) s.freq = result.freq;
+    renderStocks();
+    toast(`${s.ticker} yield อัปเดตแล้ว ✓`);
+  } catch(e) {
+    if (badge) { badge.textContent = s.yield + '%'; badge.className = 'si-yield-badge'; }
+    toast(`ไม่สามารถดึง yield ของ ${s.ticker}`);
+  }
+}
+
+// ── SYNC INPUTS ──
+function syncFromUSD(uid, tid, huid, htid) {
+  const usd = parseFloat(document.getElementById(uid).value) || 0;
+  if (usd > 0) {
+    document.getElementById(tid).value = (usd * fxRate).toFixed(0);
+    document.getElementById(huid).textContent = '';
+    document.getElementById(htid).textContent = '';
+  } else {
+    document.getElementById(tid).value = '';
+    document.getElementById(huid).textContent = '';
+    document.getElementById(htid).textContent = '';
+  }
+}
+function syncFromTHB(tid, uid, htid, huid) {
+  const thb = parseFloat(document.getElementById(tid).value) || 0;
+  if (thb > 0) {
+    const usd = thb / fxRate;
+    document.getElementById(uid).value = usd.toFixed(2);
+    document.getElementById(htid).textContent = '';
+    document.getElementById(huid).textContent = '';
+  } else {
+    document.getElementById(uid).value = '';
+  }
+}
+
+function getUSD(id) { return parseFloat(document.getElementById(id).value) || 0; }
+function getPrincipal() { return getUSD('p-usd') || getUSD('p-thb') / fxRate; }
+function getDCA() { return getUSD('d-usd') || getUSD('d-thb') / fxRate; }
+
+function updateHints() {
+  const n = stocks.length || 1;
+  const p = getPrincipal(), d = getDCA();
+  document.getElementById('hint-p').textContent = p > 0
+    ? `หาร ${n} หุ้น = ${fU(p/n)} / ${fT(p/n)} ต่อหุ้น`
+    : 'หารเฉลี่ยทุกหุ้นเท่าๆ กัน';
+  document.getElementById('hint-d').textContent = d > 0
+    ? `หาร ${n} หุ้น = ${fU(d/n)} / ${fT(d/n)} ต่อหุ้น/เดือน`
+    : 'หารเฉลี่ยทุกหุ้นเท่าๆ กัน';
+  updateSummary();
+}
+
+function updateSummary() {
+  const n = stocks.length;
+  document.getElementById('ps-count').textContent = n;
+  if (n === 0) { document.getElementById('ps-yield').textContent = '—'; return; }
+  const avgYield = stocks.reduce((a,s) => a + s.yield, 0) / n;
+  const monthlyCount = stocks.filter(s => s.freq === 12).length;
+  document.getElementById('ps-yield').textContent = avgYield.toFixed(2) + '%';
+  document.getElementById('ps-monthly').textContent = monthlyCount + '/' + n + ' ตัว';
+}
+
+// ── RENDER STOCKS ──
+function renderStocks() {
+  const list = document.getElementById('stock-list');
+  list.innerHTML = '';
+  const colors = ['#e8f4fd','#e6f4ef','#fdf3d7','#fdecea','#f0ebff','#fff5e6'];
+  stocks.forEach((s, i) => {
+    const fl = s.freq===12?'รายเดือน':s.freq===4?'ราย 3 เดือน':s.freq===2?'ราย 6 เดือน':'รายปี';
+    const fc = s.freq===12?'freq-m':'freq-q';
+    const barColor = s.freq===12?'#4d8fff':'#8a6500';
+    const weight = stocks.length > 0 ? (100/stocks.length).toFixed(0) : 0;
+    const el = document.createElement('div');
+    el.className = 'stock-item';
+    el.innerHTML = `
+      <div class="si-bar" style="background:${barColor}"></div>
+      <div class="si-main">
+        <div class="si-top">
+          <span class="si-ticker">${s.ticker}</span>
+          <span class="si-yield-badge" id="badge-${s.id}">${s.yield}%</span>
+        </div>
+        <div class="si-name">${s.name}</div>
+        <div class="si-meta">
+          <span class="freq-badge ${fc}">${fl}</span>
+          <span class="weight-badge">${weight}% พอร์ต</span>
+        </div>
+      </div>
+      <div class="si-actions">
+        <button class="refresh-yield-btn" onclick="refreshStockYield(${s.id})" title="ดึง yield ล่าสุด">↻ yield</button>
+        <button class="del-btn" onclick="removeStock(${s.id})">✕</button>
+      </div>`;
+    list.appendChild(el);
+  });
+  updateHints();
+}
+
+function removeStock(id) { stocks = stocks.filter(x => x.id !== id); renderStocks(); }
+function openModal() {
+  document.getElementById('m-fetch-status').textContent = '';
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+function addStock() {
+  const tk = document.getElementById('m-ticker').value.trim().toUpperCase();
+  const nm = document.getElementById('m-name').value.trim() || tk;
+  const yl = parseFloat(document.getElementById('m-yield').value) || 0;
+  const fr = parseInt(document.getElementById('m-freq').value) || 12;
+  if (!tk || !yl) { toast('กรุณากรอก Ticker และ Yield'); return; }
+  stocks.push({id:nid++, ticker:tk, name:nm, yield:yl, freq:fr});
+  renderStocks(); closeModal();
+  ['m-ticker','m-name','m-yield'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('m-freq').value = '12';
+}
+
+// ── CALCULATE ──
+function calculate() {
+  const years = parseInt(document.getElementById('years').value) || 10;
+  const n = stocks.length;
+  if (n === 0) { toast('กรุณาเพิ่มหุ้นอย่างน้อย 1 ตัว'); return; }
+  const pEach = getPrincipal() / n;
+  const dEach = getDCA() / n;
+
+  const sRes = stocks.map(s => {
+    let port = pEach, inv = pEach, totDiv = 0;
+    const yr = s.yield / 100;
+    const rows = [];
+    for (let y = 1; y <= years; y++) {
+      let yd = 0;
+      for (let m = 1; m <= 12; m++) {
+        port += dEach; inv += dEach;
+        const md = port * yr / 12;
+        yd += md; totDiv += md;
+        port += md;
+      }
+      rows.push({year:y, pv:port, dy:yd, dm:yd/12, inv});
+    }
+    return {...s, rows, totInv:inv, totDiv, finalPort:port};
+  });
+
+  const agg = [];
+  for (let y = 1; y <= years; y++) {
+    let p=0, dy=0, inv=0;
+    sRes.forEach(sr => { const r=sr.rows[y-1]; p+=r.pv; dy+=r.dy; inv+=r.inv; });
+    agg.push({year:y, p, dy, dm:dy/12, inv});
+  }
+
+  const totInv = sRes.reduce((a,s) => a+s.totInv, 0);
+  const finP   = sRes.reduce((a,s) => a+s.finalPort, 0);
+  const totDiv = sRes.reduce((a,s) => a+s.totDiv, 0);
+  const last   = agg[agg.length-1];
+  const gr     = totInv > 0 ? ((finP-totInv)/totInv*100) : 0;
+
+  document.getElementById('r-final').textContent = fU(finP);
+  document.getElementById('r-final-thb').textContent = fT(finP);
+  document.getElementById('r-years').textContent = years;
+  document.getElementById('r-growth').textContent = (gr>=0?'+':'') + gr.toFixed(1) + '%';
+  document.getElementById('r-inv').textContent = fU(totInv);
+  document.getElementById('r-inv-t').textContent = fT(totInv);
+  document.getElementById('r-dtot').textContent = fU(totDiv);
+  document.getElementById('r-dtot-t').textContent = fT(totDiv);
+  document.getElementById('r-dy').textContent = fU(last.dy);
+  document.getElementById('r-dy-t').textContent = fT(last.dy);
+  document.getElementById('r-dm').textContent = fU(last.dm);
+  document.getElementById('r-dm-t').textContent = fT(last.dm);
+
+  const tb = document.getElementById('ytable'); tb.innerHTML = '';
+  agg.forEach(r => { tb.innerHTML += `<tr>
+    <td>${r.year}</td>
+    <td class="g">${fU(r.p)}<span class="sub">${fT(r.p)}</span></td>
+    <td class="gold">${fU(r.dy)}<span class="sub">${fT(r.dy)}</span></td>
+    <td>${fU(r.dm)}<span class="sub">${fT(r.dm)}</span></td>
+    <td style="color:var(--blue)">${fU(r.inv)}</td>
+  </tr>`; });
+
+  const bd = document.getElementById('bdlist'); bd.innerHTML = '';
+  sRes.forEach(sr => {
+    const lr = sr.rows[sr.rows.length-1];
+    const fl = sr.freq===12?'รายเดือน':sr.freq===4?'ราย 3 เดือน':sr.freq===2?'ราย 6 เดือน':'รายปี';
+    const wt = (100/n).toFixed(1);
+    bd.innerHTML += `<div class="breakdown-item">
+      <div class="bd-header">
+        <div class="bd-left"><div class="bd-ticker">${sr.ticker}</div><div class="bd-name">${sr.name} · ${fl} · ${wt}% พอร์ต</div></div>
+        <span class="bd-yield">${sr.yield}%</span>
+      </div>
+      <div class="bd-stats">
+        <div class="bd-stat"><div class="bds-l">พอร์ต</div><div class="bds-v g">${fU(sr.finalPort)}</div><div class="bds-sub">${fT(sr.finalPort)}</div></div>
+        <div class="bd-stat"><div class="bds-l">ปันผล/ปี</div><div class="bds-v" style="color:var(--gold)">${fU(lr.dy)}</div><div class="bds-sub">${fT(lr.dy)}</div></div>
+        <div class="bd-stat"><div class="bds-l">ลงทุนรวม</div><div class="bds-v" style="color:var(--blue)">${fU(sr.totInv)}</div><div class="bds-sub">${fT(sr.totInv)}</div></div>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('rs').style.display = 'block';
+  document.getElementById('no-r').style.display = 'none';
+  switchTab('results');
+}
+
+function switchTab(tab) {
+  const n = ['setup','results','breakdown'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', n[i]===tab));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+document.getElementById('modal').addEventListener('click', function(e){ if(e.target===this) closeModal(); });
+document.getElementById('m-ticker').addEventListener('input', function(){ this.value=this.value.toUpperCase(); });
+
+// ── INIT ──
+renderStocks();
+fetchFX();
+</script>
+</body>
+</html>
